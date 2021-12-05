@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
     accountNumber: { type: Number, default: Math.floor(Math.random() * 10000000) + 1111111 },
     accountBalance: { type: Number, required: "Please input the amount you would like to open an account with" },
     accountType: { type: String, enum: ['savings', 'current'], default: 'savings' },
-    createdAt: { type: Date, default: Date.now },
+    createdAt: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model("user", userSchema);
