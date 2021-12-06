@@ -27,4 +27,4 @@ You will also need to create a .env file at the root directory, and you will nee
 
 ## Start server
 
-    npm run server
+    npm run index
