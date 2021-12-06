@@ -12,6 +12,9 @@ module.exports = function(app) {
     app.route('/api/users')
         .get(bankApi.get_all_users);
 
+    app.route('/api/transaction/:accountNumber')
+        .get(bankApi.get_transaction_history);
+
     app.route('/api/balance/:Id')
         .get(bankApi.get_user_balance);
 

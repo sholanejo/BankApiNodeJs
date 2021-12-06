@@ -19,14 +19,18 @@ exports.get_all_users = function(req, res) {
 exports.get_user_balance = function (req, res) {
     User.findById(req.params.Id, function(err, user) {
         if (err)
-            res.status(404).send("User Does not exist in the database");
+            res.status(404).send(`User with Id ${Id} does not exist in the database`);
         res.json(`The account balance of ${user.fullName} is ${user.accountBalance}`);
     });
 };
 
-exports.get_transaction_history = function(req, res) {
-    User.findOne();
-}
+exports.get_transaction_history = function (req, res) {
+    Transaction.find({ accountNumber: req.params.accountNumber }, function (err, transaction) {
+        if (err)
+            res.status(404).send(`User with account number ${accountNumber} does not exist`);
+        res.json(transaction);
+    });
+};
 
 exports.find_user_byId = function(req, res) {
     User.findById(req.params.Id, function(err, user) {
