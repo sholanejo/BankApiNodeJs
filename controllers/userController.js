@@ -91,7 +91,7 @@ exports.login_a_user = async function(req, res) {
 
         const user = await User.findOne({ email });
 
-        if (user === null || (await bcrypt.compare(password, user.password) == false)) {
+        if (user === null || (await bcrypt.compare(password, user.password) === false)) {
             res.status(400).send("Invalid Credentials");
         }
 
@@ -109,6 +109,30 @@ exports.login_a_user = async function(req, res) {
 
     } catch (err) {
         return res.json({ message: err });
+    }
+}
+
+exports.change_password = async function (req, res) {
+    try {
+        const { email, password, newPassword, newPassConfirm } = req.body;
+        if (!(email && password && newPassword && newPassConfirm)) {
+            res.status(400).send("All input are required");
+        }
+        const user = await User.findOne({ email });
+        if (user === null || (await bcrypt.compare(password, user.password) === false)) {
+            res.status(400).send("Invalid Credentials");
+        }
+            if (newPassword !== newPassConfirm) {
+                res.status(400).send("New password and Password confirmation must match");
+            }
+            if (user && (await bcrypt.compare(password, user.password)) && newPassword === newPassConfirm) {
+                let encryptedPassword = await bcrypt.hash(newPassConfirm, 10);
+                user.password = encryptedPassword;
+                user.save();
+                res.status(200).send("Password Changed Successfully");
+            }        
+    } catch (e) {
+        return res.json({ message: e });
     }
 }
 
