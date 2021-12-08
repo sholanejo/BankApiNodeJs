@@ -9,9 +9,9 @@ const routes = require('./routes/bankApiRoutes');
 routes(app);
 
 app.use(function(req, res) {
-        res.status(404).send({ url: req.originalUrl + ' not found' })
+    res.status(404).send({ url: req.originalUrl + ' not found' });
     })
     // server listening 
 server.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+    console.log(`Server running on port ${port}`); 
 });

@@ -9,6 +9,9 @@ module.exports = function(app) {
     app.route('/api/register')
         .post(bankApi.register_a_user);
 
+    app.route('/api/transfer')
+        .post(auth, bankApi.transfer_money);
+
     app.route('/api/users')
         .get(bankApi.get_all_users);
 

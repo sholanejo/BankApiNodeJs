@@ -16,7 +16,7 @@ exports.get_all_users = function(req, res) {
         res.json(user);
     })
 }
-exports.get_user_balance = function (req, res) {
+exports.get_user_balance = function(req, res) {
     User.findById(req.params.Id, function(err, user) {
         if (err)
             res.status(404).send(`User with Id ${Id} does not exist in the database`);
@@ -24,8 +24,8 @@ exports.get_user_balance = function (req, res) {
     });
 };
 
-exports.get_transaction_history = function (req, res) {
-    Transaction.find({ accountNumber: req.params.accountNumber }, function (err, transaction) {
+exports.get_transaction_history = function(req, res) {
+    Transaction.find({ accountNumber: req.params.accountNumber }, function(err, transaction) {
         if (err)
             res.status(404).send(`User with account number ${accountNumber} does not exist`);
         res.json(transaction);
@@ -97,7 +97,7 @@ exports.login_a_user = async function(req, res) {
 
 
         if (user && (await bcrypt.compare(password, user.password))) {
-            const token = jwt.sign({ user_id: user._id, email },
+            const token = jwt.sign({ user_id: user._id, email, accountBalance: user.accountBalance, accountNumber: user.accountNumber },
                 process.env.TOKEN_KEY, {
                     expiresIn: "2h",
                 }
@@ -112,7 +112,7 @@ exports.login_a_user = async function(req, res) {
     }
 }
 
-exports.change_password = async function (req, res) {
+exports.change_password = async function(req, res) {
     try {
         const { email, password, newPassword, newPassConfirm } = req.body;
         if (!(email && password && newPassword && newPassConfirm)) {
@@ -122,15 +122,15 @@ exports.change_password = async function (req, res) {
         if (user === null || (await bcrypt.compare(password, user.password) === false)) {
             res.status(400).send("Invalid Credentials");
         }
-            if (newPassword !== newPassConfirm) {
-                res.status(400).send("New password and Password confirmation must match");
-            }
-            if (user && (await bcrypt.compare(password, user.password)) && newPassword === newPassConfirm) {
-                let encryptedPassword = await bcrypt.hash(newPassConfirm, 10);
-                user.password = encryptedPassword;
-                user.save();
-                res.status(200).send("Password Changed Successfully");
-            }        
+        if (newPassword !== newPassConfirm) {
+            res.status(400).send("New password and Password confirmation must match");
+        }
+        if (user && (await bcrypt.compare(password, user.password)) && newPassword === newPassConfirm) {
+            let encryptedPassword = await bcrypt.hash(newPassConfirm, 10);
+            user.password = encryptedPassword;
+            user.save();
+            res.status(200).send("Password Changed Successfully");
+        }
     } catch (e) {
         return res.json({ message: e });
     }
@@ -164,7 +164,7 @@ exports.deposit_funds = async function(req, res) {
                 transactionAmount: depositAmount
             };
             await user.save();
-            Transaction.create(transactionDetails)
+            await Transaction.create(transactionDetails)
             res.status(201).send(`Deposit of ${formatter.format(depositAmount)} to ${accountNumber} was successful.`)
         }
 
@@ -173,14 +173,48 @@ exports.deposit_funds = async function(req, res) {
     }
 }
 
-exports.transfer_money = function(req, res, auth) {
+exports.transfer_money = async function(req, res) {
     try {
-        const { beneficiaryAccount, transferAmount, description } = req.body;
-        if (!(beneficiaryAccount && transferAmount && description)) {
-            res.status(400).send("All input are required"); 
+        const { accountNumber, transferAmount, description } = req.body;
+        if (!(accountNumber && transferAmount && description)) {
+            res.status(400).send("All input are required");
         }
 
-    } catch {
+        let beneficiary = await User.findOne({ accountNumber });
+        if (beneficiary === null) {
+            res.status(400).send("User with this account number does not exist");
+        }
+
+        let currentUser = await User.findById(req.user.user_id);
+        if (transferAmount > currentUser.accountBalance) {
+            res.status(400).send("Insufficient funds to make this transfer");
+        }
+
+        if (currentUser.accountNumber !== beneficiary) {
+            beneficiary.accountBalance = beneficiary.accountBalance + transferAmount;
+            currentUser.accountBalance = currentUser.accountBalance - transferAmount;
+            let transactionDetails = {
+                transactionType: 'Transfer',
+                accountNumber: accountNumber,
+                description: description,
+                sender: currentUser.accountNumber,
+                transactionAmount: transferAmount
+            };
+            await beneficiary.save();
+            await currentUser.save();
+            await Transaction.create(transactionDetails);
+
+            res.status(200).send(`Transfer of ${formatter.format(transferAmount)} to ${accountNumber} was successful`);
+        }
+    } catch (err) {
+        res.json({ message: err });
+    }
+}
+
+exports.withdraw_money = function(req, res) {
+    try {
+        const { withdrawAmount, description } = req.body;
+    } catch (e) {
 
     }
 }
