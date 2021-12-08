@@ -12,6 +12,9 @@ module.exports = function(app) {
     app.route('/api/transfer')
         .post(auth, bankApi.transfer_money);
 
+    app.route('/api/withdraw')
+        .post(auth, bankApi.withdraw_money);
+
     app.route('/api/users')
         .get(bankApi.get_all_users);
 

@@ -186,8 +186,11 @@ exports.transfer_money = async function(req, res) {
         }
 
         let currentUser = await User.findById(req.user.user_id);
-        if (transferAmount > currentUser.accountBalance) {
+        if (transferAmount > currentUser.accountBalance && transferAmount > 0) {
             res.status(400).send("Insufficient funds to make this transfer");
+        }
+        if (currentUser.accountNumber === beneficiary) {
+            res.status(400).send("Sorry you cannot send money to yourself");
         }
 
         if (currentUser.accountNumber !== beneficiary) {
@@ -211,11 +214,29 @@ exports.transfer_money = async function(req, res) {
     }
 }
 
-exports.withdraw_money = function(req, res) {
+exports.withdraw_money = async function(req, res) {
     try {
-        const { withdrawAmount, description } = req.body;
+        const { withdrawAmount } = req.body;
+        if (!withdrawAmount) {
+            res.status(400).send("Please input the amount you'd like to withdraw");
+        }
+        let currentUser = await User.findById(req.user.user_id);
+        if (withdrawAmount > currentUser.accountBalance) {
+            res.status(400).send("Insufficient funds to make this withdrawal");
+        }
+        currentUser.accountBalance = currentUser.accountBalance - withdrawAmount;
+        let transactionDetails = {
+            transactionType: 'Withdraw',
+            accountNumber: currentUser.accountNumber,
+            description: `NIBSS withdrawal of ${formatter.format(withdrawAmount)}`,
+            //sender: currentUser.accountNumber,
+            transactionAmount: withdrawAmount
+        };
+        await currentUser.save();
+        await Transaction.create(transactionDetails);
+        res.status(200).send(`Withdrawal of ${formatter.format(withdrawAmount)} was successful`);
     } catch (e) {
-
+        res.json({ message: e });
     }
 }
 
