@@ -5,6 +5,7 @@ const transaction = require('../models/transaction');
 const mongoose = require("mongoose"),
     User = mongoose.model("user"),
     Transaction = mongoose.model("transaction"),
+    session = mongoose.startSession,
     jwt = require("jsonwebtoken"),
     auth = require("../middleware/auth"),
     bcrypt = require("bcrypt");
@@ -97,7 +98,7 @@ exports.login_a_user = async function(req, res) {
 
 
         if (user && (await bcrypt.compare(password, user.password))) {
-            const token = jwt.sign({ user_id: user._id, email, accountBalance: user.accountBalance, accountNumber: user.accountNumber },
+            const token = jwt.sign({ user_id: user._id, email },
                 process.env.TOKEN_KEY, {
                     expiresIn: "2h",
                 }
@@ -143,6 +144,7 @@ const formatter = new Intl.NumberFormat('en-US', {
 
 exports.deposit_funds = async function(req, res) {
     try {
+
         const { accountNumber, depositAmount, description, from } = req.body;
         if (!(accountNumber && depositAmount && description && from)) {
             res.status(400).send("All input are required");
@@ -241,6 +243,6 @@ exports.withdraw_money = async function(req, res) {
 }
 
 //testing authorization
-exports.auth = function(req, res, auth) {
+exports.auth = function(req, res) {
     res.status(200).send("Welcome to This Bank Api built with NodeJs");
 }
